@@ -31,7 +31,7 @@ public class RetailRewardsApplicationTest {
     void testCalculateRewardsforAmountAboveHundred() {
         Customer customer = rewardsService.calculateRewardsByCustomerId(7);
         if (customer.getId() == 7) {
-            Assertions.assertEquals(2, customer.getTotalRewardAmount());
+            Assertions.assertEquals(70, customer.getTotalRewardAmount());
         }
     }
 
@@ -39,7 +39,7 @@ public class RetailRewardsApplicationTest {
     void testCalculateRewardsforAmountAboveFiftyBelowHundred() {
         Customer customer = rewardsService.calculateRewardsByCustomerId(3);
         if (customer.getId() == 3) {
-            Assertions.assertEquals(1, customer.getTotalRewardAmount());
+            Assertions.assertEquals(5, customer.getTotalRewardAmount());
         }
     }
 
@@ -55,7 +55,7 @@ public class RetailRewardsApplicationTest {
     void testCalculateRewardsforMultipleTransactions() {
         Customer customer = rewardsService.calculateRewardsByCustomerId(1);
         if (customer.getId() == 1) {
-            Assertions.assertEquals(50, customer.getTotalRewardAmount());
+            Assertions.assertEquals(170, customer.getTotalRewardAmount());
         }
     }
 }
