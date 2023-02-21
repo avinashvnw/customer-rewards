@@ -1,71 +1,73 @@
 package com.customer.rewards.service.impl;
 
-import com.customer.rewards.constants.Constants;
-import com.customer.rewards.entity.Transaction;
-import com.customer.rewards.model.Rewards;
-import com.customer.rewards.repository.TransactionRepository;
+
+import com.customer.rewards.model.Customer;
+import com.customer.rewards.model.Transactions;
+import com.customer.rewards.repository.CustomerRepository;
 import com.customer.rewards.service.RewardsService;
+import com.customer.rewards.utils.RewardsUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.util.Set;
 
 @Service
 public class RewardsServiceImpl implements RewardsService {
 
+    Logger logger = LoggerFactory.getLogger(RewardsServiceImpl.class);
+
     @Autowired
-    TransactionRepository transactionRepository;
+    CustomerRepository customerRepo;
+
+    @Autowired
+    RewardsUtil rewardsUtil;
 
     @Override
-    public Rewards calculateRewardsByCustomerId(Long customerId) {
+    public Customer calculateRewardsByCustomerId(Integer customerId) {
+        logger.info("calculateRewardsbyId method In RewardServiceImpl start....");
+        Customer customerReward = customerRepo.findById(customerId).orElse(null);
+        if(customerReward != null) {
+            Set<Transactions> setOfTransaction = customerReward.getTransactions();
+            setRewardsPerMonth(setOfTransaction, customerReward);
+            logger.debug("End of reward calculation for customer" + customerReward.getName());
+        }
 
-        Timestamp lastMonthTimestamp = getDateBasedOnOffSetDays(Constants.DAYS_IN_MONTHS);
-        Timestamp lastSecondMonthTimestamp = getDateBasedOnOffSetDays(2*Constants.DAYS_IN_MONTHS);
-        Timestamp lastThirdMonthTimestamp = getDateBasedOnOffSetDays(3*Constants.DAYS_IN_MONTHS);
 
-        List<Transaction> lastMonthTransactions = transactionRepository.findAllTransactionDateBetweenByCustomerID(
-                customerId, lastMonthTimestamp, Timestamp.from(Instant.now()));
-        List<Transaction> lastSecondMonthTransactions = transactionRepository
-                .findAllTransactionDateBetweenByCustomerID(customerId, lastSecondMonthTimestamp, lastMonthTimestamp);
-        List<Transaction> lastThirdMonthTransactions = transactionRepository
-                .findAllTransactionDateBetweenByCustomerID(customerId, lastThirdMonthTimestamp,
-                        lastSecondMonthTimestamp);
-
-        Long lastMonthRewardPoints = getRewardsPerMonth(lastMonthTransactions);
-        Long lastSecondMonthRewardPoints = getRewardsPerMonth(lastSecondMonthTransactions);
-        Long lastThirdMonthRewardPoints = getRewardsPerMonth(lastThirdMonthTransactions);
-
-        Rewards customerRewards = new Rewards();
-        customerRewards.setCustomerId(customerId);
-        customerRewards.setLastMonthRewardPoints(lastMonthRewardPoints);
-        customerRewards.setLastSecondMonthRewardPoints(lastSecondMonthRewardPoints);
-        customerRewards.setLastThirdMonthRewardPoints(lastThirdMonthRewardPoints);
-        customerRewards.setTotalRewards(lastMonthRewardPoints + lastSecondMonthRewardPoints + lastThirdMonthRewardPoints);
-
-        return customerRewards;
+        logger.info("calculateRewardsbyId method In RewardServiceImpl end....");
+        return customerReward;
     }
 
-    private Long getRewardsPerMonth(List<Transaction> transactions) {
-        return transactions.stream().map(transaction -> calculateRewards(transaction))
-                .collect(Collectors.summingLong(r -> r.longValue()));
+    private void setRewardsPerMonth(Set<Transactions> setOfTransaction, Customer customer) {
+        LocalDate todayDate = LocalDate.now();
+
+        for (Transactions transaction : setOfTransaction) {
+            int transactionMon = transaction.getCreationDate().getMonth() + 1;
+            int transactionYear = transaction.getCreationDate().getYear() + 1900;
+
+
+            logger.debug("Start Calculating Rewards for Customer:::" + customer.getName() + " for Transaction Id::: "
+                    + transaction.getId());
+
+            if ((todayDate.getYear() == transactionYear) && (todayDate.getMonth().getValue() == transactionMon))
+                customer.setThirdMonthRewards(customer.getThirdMonthRewards()
+                        + rewardsUtil.calculateRewardAmountPerTrans(transaction.getTransactionAmount()));
+
+            else if ((todayDate.minusMonths(1).getYear() == transactionYear)
+                    && (todayDate.minusMonths(1).getMonth().getValue() == transactionMon))
+                customer.setSecondMonthRewards(customer.getSecondMonthRewards()
+                        + rewardsUtil.calculateRewardAmountPerTrans(transaction.getTransactionAmount()));
+            else if ((todayDate.minusMonths(2).getYear() == transactionYear)
+                    && (todayDate.minusMonths(2).getMonth().getValue() == transactionMon))
+                customer.setFirstMonthRewards(customer.getFirstMonthRewards()
+                        + rewardsUtil.calculateRewardAmountPerTrans(transaction.getTransactionAmount()));
+
+            logger.debug("End Calculating Rewards for customer::::" + customer.getName() + " for Transaction Id:::"
+                    + transaction.getId());
+
+        }
     }
 
-    private Long calculateRewards(Transaction t) {
-        if (t.getTransactionAmount() > Constants.FIRST_REWARD_LIMIT && t.getTransactionAmount() <= Constants.SECOND_REWARD_LIMIT) {
-            return Math.round(t.getTransactionAmount() - Constants.FIRST_REWARD_LIMIT);
-        } else if (t.getTransactionAmount() > Constants.SECOND_REWARD_LIMIT) {
-            return Math.round(t.getTransactionAmount() - Constants.SECOND_REWARD_LIMIT) * 2
-                    + (Constants.SECOND_REWARD_LIMIT - Constants.FIRST_REWARD_LIMIT);
-        } else
-            return 0l;
-
-    }
-
-    private Timestamp getDateBasedOnOffSetDays(int days) {
-        return Timestamp.valueOf(LocalDateTime.now().minusDays(days));
-    }
 }

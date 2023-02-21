@@ -1,10 +1,9 @@
 package com.customer.rewards.repository;
 
-import com.customer.rewards.entity.Customer;
+import com.customer.rewards.model.Customer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface CustomerRepository extends JpaRepository<Customer, Long> {
-    public Customer findByCustomerId(Long CustomerId);
+public interface CustomerRepository extends JpaRepository<Customer, Integer> {
 }

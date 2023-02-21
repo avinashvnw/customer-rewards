@@ -1,7 +1,7 @@
 package com.customer.rewards.service;
 
-import com.customer.rewards.model.Rewards;
+import com.customer.rewards.model.Customer;
 
 public interface RewardsService {
-    public Rewards calculateRewardsByCustomerId(Long customerId);
+    Customer calculateRewardsByCustomerId(Integer customerId);
 }

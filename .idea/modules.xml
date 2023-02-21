@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/customer_rewards.iml" filepath="$PROJECT_DIR$/customer_rewards.iml" />
+      <module fileurl="file://$PROJECT_DIR$/retail_customer_rewards.iml" filepath="$PROJECT_DIR$/retail_customer_rewards.iml" />
     </modules>
   </component>
 </project>

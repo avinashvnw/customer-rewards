@@ -15,4 +15,3 @@ CREATE TABLE transaction (
   transaction_amount INT,
   creation_date DATE  
 );
-
